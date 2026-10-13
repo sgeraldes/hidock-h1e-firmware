@@ -92,6 +92,16 @@ The custom extensions that mutate persistent settings still require a readback. 
 
 ## Version boundaries
 
+### Separate live audio on the tested H1E
+
+Live PCM does not require a finished recording. CMD33 starts mode 2 with body `[0, 0, 0, 1, 0, 0, 0, 2]`; the existing connection owner then dequeues CMD34 with an empty body. After the eight metadata bytes, each four-byte frame contains channel 0's signed PCM16LE sample followed by channel 1's sample. The host expects 16 kHz; the protocol does not negotiate that rate.
+
+On the author's H1E running 393988 / 6.3.4 in normal USB mode 2, a bounded live check delivered 42 packets / 67,200 frames as two independent mono buffers, matching every source byte. An explicit 1 kHz HiDock USB playback tone was 69.35 times stronger in channel 1, identifying that lane as system audio. Channel 0 is microphone in the user's fixed setup and the firmware's mute-first route. This does not qualify Bluetooth paths or individual microphone-array elements.
+
+The check requested neither transcription nor recording-file saving. Stop was acknowledged, native recording returned idle, settings including auto-record stayed unchanged, and the file count stayed 587. Start/stop still have device-side recording effects, so consumers must establish native idle and check teardown rather than assuming that disabling host file saving disables every recording behavior.
+
+The reusable host splitter is published in the separate [Next source commit a1256d6](https://github.com/sgeraldes/hidock-next-2/commit/a1256d653145934be53fe2dea1f09087cd09e394), with its [live channel contract](https://github.com/sgeraldes/hidock-next-2/blob/firmware/h1e-6.3.4/docs/devices/live-channel-contract.md). Consumers share the existing reader; they must not open a second CMD34 reader. Live transport already exists in official firmware; this host tap is separate from the native recording encoder changes in the custom images.
+
 The model, exact reported version pair, active connection session, and relevant capability response form the qualification boundary. Similar version numbers on other devices are not interchangeable. In particular:
 
 - The custom settings and firmware-status extensions are not available on official H1E 6.3.0.
