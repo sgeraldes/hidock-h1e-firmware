@@ -37,4 +37,6 @@ The relevant command branch, event routing, cancellation code and mode-selector 
 
 The recovered startup callback, mode check, event mapping, resource lookup and enqueue bytes also match the frozen custom image. An initial decompiler reading confused the event-type-0 branch (`r0=1`) with event type 2. The actual type-2 instructions load `r0` from the payload halfword, so the demo uses id `0x51` and receives its explicit option-`0x15` exemption.
 
-**Still unqualified:** audible waveform, speech, exact acoustic stop latency, interference with concurrent notification playback, and the complete host/native settings crosswalk. Asset selection and enqueue are established from code; the ACKs and state readbacks do not prove audible rendering. Next has no public SDK/UI control for this command; the test used an isolated qualification helper.
+On 13 October 2026 the user confirmed: **“Confirming that audio plays. Asset is played back correctly.”** This adds human confirmation of audible asset playback to the command/state observation. No instrumented waveform comparison or acoustic stop-latency measurement was performed.
+
+**Still unqualified:** exact acoustic stop latency, interference with concurrent notification playback, the complete host/native settings crosswalk, and any arbitrary-text synthesis capability elsewhere in the device. This command's asset-selection path is prerecorded playback. Next has no public SDK/UI control for this command; the test used an isolated qualification helper.
