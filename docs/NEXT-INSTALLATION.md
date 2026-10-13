@@ -52,10 +52,23 @@ Run the development app with both explicit flags. Keep the same profile folder f
 
 ```powershell
 Set-Location apps/electron
+$firmwareProfile = Join-Path $env:LOCALAPPDATA 'HiDockNext-H1E-Firmware'
+$firmwareLibrary = Join-Path $firmwareProfile 'library'
+$firmwareConfigPath = Join-Path $firmwareProfile 'config.json'
+New-Item -ItemType Directory -Path $firmwareProfile -Force | Out-Null
+if (!(Test-Path -LiteralPath $firmwareConfigPath)) {
+    @{ storage = @{ dataPath = $firmwareLibrary }; device = @{ autoConnect = $false };
+       transcription = @{ autoTranscribe = $false } } |
+        ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $firmwareConfigPath -Encoding utf8
+}
+$firmwareConfig = Get-Content -LiteralPath $firmwareConfigPath -Raw | ConvertFrom-Json
+if ($firmwareConfig.storage.dataPath -ne $firmwareLibrary) {
+    throw 'This profile points to another library. Use a new dedicated profile; do not overwrite its configuration.'
+}
 $previousProfile = $env:HIDOCK_DEV_USERDATA
 $previousNodeMode = $env:ELECTRON_RUN_AS_NODE
 try {
-    $env:HIDOCK_DEV_USERDATA = Join-Path $env:LOCALAPPDATA 'HiDockNext-H1E-Firmware'
+    $env:HIDOCK_DEV_USERDATA = $firmwareProfile
     Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
     & .\node_modules\.bin\electron.cmd . --recovery-mode --firmware-qualification
 } finally {
@@ -67,6 +80,8 @@ try {
 ```
 
 Recovery containment disables background scans, downloads, transcription, connectors and other automatic work for this launch. It does not rewrite the normal profile's saved settings. The firmware qualification flag explicitly enables the firmware owner APIs. No unauthenticated browser debugging port is opened automatically in this mode.
+
+The profile and library are separate settings. `HIDOCK_DEV_USERDATA` alone does **not** isolate the recording library: without `storage.dataPath`, Next defaults to the normal `HiDock` folder. The configuration above pins a dedicated library and preserves any existing configuration instead of overwriting it. Keep both paths for the entire attempt.
 
 ## Prepare, review, execute, observe
 
