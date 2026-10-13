@@ -1,47 +1,141 @@
-# H1E firmware installation
+# Install H1E custom firmware with HiDock Next
 
-## Status
+**HiDock H1E only. Sebastián Geraldes's unofficial custom firmware, based on official H1E 6.3.0.** The current installation target is **6.3.4 / 393988**. The 6.3.2 image is an archive, not a rollback target.
 
-This guide documents the exact firmware-install owner flow present in the HiDock Next development application. The normal HiDock Next application does not provide a custom-firmware picker, and this repository does not include an uploader or flashing script. Do not substitute a guessed menu, file-copy procedure, command-line uploader, or raw USB operation.
+## Compatible Next revision
 
-TODO: add the reviewed compatible HiDock Next branch/revision and its exact launch instructions before treating this as a public self-service procedure.
+Use the public [HiDock Next firmware branch](https://github.com/sgeraldes/hidock-next-2/tree/firmware/h1e-6.3.4), at reviewed commit **[cdc36e3505d4fee4fb9af341d8af8cb23f5adf9e](https://github.com/sgeraldes/hidock-next-2/commit/cdc36e3505d4fee4fb9af341d8af8cb23f5adf9e)**. Ordinary Next releases do not have a custom-firmware picker. This branch provides the installation API through Next's own USB connection; it is not a Windows installer or a separate USB flasher.
 
-The app recognizes firmware qualification only when launched with recovery containment and the explicit firmware-qualification flag. The source flags are --recovery-mode and --firmware-qualification. A DevTools console is available only in the compatible development build; this repository does not supply the app launcher.
+The exact same pinned image is included at `apps/electron/resources/firmware/h1e-rea-hardened.bin`. This firmware repository contains the downloadable images and documents; app source remains in the Next repository.
 
-## Required checks
+## Build the development application on Windows
 
-Before preparing an attempt:
+Node.js 22.12 or later and Git are required. In PowerShell, create a separate checkout:
 
-1. Confirm the device is a HiDock H1E and read its current version through the application.
-2. Ensure native and live recording are idle, the application device owner is available, no transfer or mass-storage session is active, and no unresolved storage-ownership journal exists.
-3. Let the application perform its native card readiness check. The firmware path requires a ready card with at least 6 MiB free for these images.
-4. Compare the selected release file against its exact SHA-256 and byte length in the repository manifest and SHA256SUMS.
-5. Use only the current custom target, 6.3.4 / 393988. This document does not authorize routine transitions to stock firmware or downgrade to 6.3.2.
+```powershell
+git clone --single-branch --branch firmware/h1e-6.3.4 https://github.com/sgeraldes/hidock-next-2.git HiDockNext-H1E-Firmware
+Set-Location HiDockNext-H1E-Firmware
+git checkout cdc36e3505d4fee4fb9af341d8af8cb23f5adf9e
 
-The application validates the image container, model, version, exact byte length, SHA-256, current device identity, card state, owner-idle state, and durable attempt state. Preparation is read-only. Execution is one explicit attempt and is never automatically retried.
+$packages = @('ai-providers', 'calendar-sync', 'connectors', 'connectors-slack', 'database', 'jensen-protocol', 'knowledge-graph', 'transcription')
+foreach ($package in $packages) {
+    Push-Location (Join-Path 'packages' $package)
+    try {
+        npm.cmd ci --ignore-scripts
+        if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed: $package" }
+        npm.cmd run build --if-present
+        if ($LASTEXITCODE -ne 0) { throw "Package build failed: $package" }
+    } finally { Pop-Location }
+}
+npm.cmd --prefix apps/electron ci
+if ($LASTEXITCODE -ne 0) { throw 'Next dependency installation failed' }
+npm.cmd --prefix apps/electron run build
+if ($LASTEXITCODE -ne 0) { throw 'Next build failed' }
+```
 
-## Development-app flow
+These build the development app. Do not run `build:win` or an installer to use this procedure.
 
-In the compatible HiDock Next development app's DevTools console, prepare the pinned custom target:
+Check the bundled image before opening Next:
 
-    window.electronAPI.jensen.prepareFirmwareInstall('hardened')
+```powershell
+(Get-Item apps/electron/resources/firmware/h1e-rea-hardened.bin).Length
+(Get-FileHash apps/electron/resources/firmware/h1e-rea-hardened.bin -Algorithm SHA256).Hash
+```
 
-Inspect the returned plan. It must be in prepared state and name target version 393988, image size 3429376, and SHA-256 4942c98f9a150f09b9a31b606e7e9d985e99b16873c5ef64e6e17667808d82e8. Confirm that the source version and device identity are the ones you intended. Do not execute a plan whose fields differ.
+Required values: **3429376 bytes**, SHA-256 **4942c98f9a150f09b9a31b606e7e9d985e99b16873c5ef64e6e17667808d82e8**. The app independently checks these values and the firmware container before accepting an attempt.
 
-After that review, the application API takes the prepared attempt ID and the same exact SHA-256 once:
+## Launch with a dedicated, persistent profile
 
-    window.electronAPI.jensen.executeFirmwareInstall(attemptId, '4942c98f9a150f09b9a31b606e7e9d985e99b16873c5ef64e6e17667808d82e8')
+Close other HiDock applications and browser tabs that own the dock. Stop any recording or live capture you started and finish active transfers. Keep the normal dock power and USB connection in place.
 
-The target firmware reboots through its own update flow. Do not send a reset command, unplug the dock, or start another upload while the result is unresolved. Record the attempt ID and the application result.
+Run the development app with both explicit flags. Keep the same profile folder for the whole attempt, including after an interrupted app session:
 
-After automatic reboot, observe that same attempt:
+```powershell
+Set-Location apps/electron
+$previousProfile = $env:HIDOCK_DEV_USERDATA
+$previousNodeMode = $env:ELECTRON_RUN_AS_NODE
+try {
+    $env:HIDOCK_DEV_USERDATA = Join-Path $env:LOCALAPPDATA 'HiDockNext-H1E-Firmware'
+    Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
+    & .\node_modules\.bin\electron.cmd . --recovery-mode --firmware-qualification
+} finally {
+    if ($null -eq $previousProfile) { Remove-Item Env:HIDOCK_DEV_USERDATA -ErrorAction SilentlyContinue }
+    else { $env:HIDOCK_DEV_USERDATA = $previousProfile }
+    if ($null -eq $previousNodeMode) { Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue }
+    else { $env:ELECTRON_RUN_AS_NODE = $previousNodeMode }
+}
+```
 
-    window.electronAPI.jensen.observeFirmwareInstall(attemptId)
+Recovery containment disables background scans, downloads, transcription, connectors and other automatic work for this launch. It does not rewrite the normal profile's saved settings. The firmware qualification flag explicitly enables the firmware owner APIs. No unauthenticated browser debugging port is opened automatically in this mode.
 
-A confirmed result is based on the same device identity, exact reported target version, expected custom capabilities, idle state, and card readback. The dock does not attest the complete installed image hash.
+## Prepare, review, execute, observe
 
-## If the result is uncertain
+Press **F12** in this development Next window to open its DevTools, then choose **Console**. Use this window's own API:
 
-Stop after a rejected, interrupted, or uncertain result. Preserve the durable attempt record and application evidence, and resolve the attempt through the compatible app's recovery path before making another firmware request. An upload acknowledgement alone is not proof of a completed installation.
+```javascript
+const j = window.electronAPI.jensen;
+await j.connect();
+const device = await j.getDeviceInfo();
+device;
+const ready = await j.getFirmwareUpdatePreflight();
+ready;
+```
 
-The prior 6.3.2 image is retained for artifact history. It is not a general rollback target. The public compatibility branch installs only the pinned 6.3.4 image and rejects equal or older target versions. It does not provide a generic 6.3.0 restore, stock-forward recovery image, or boot-ROM/unbrick procedure. Storage Optimize formats the recording card and is not boot-ROM recovery.
+Confirm `device.model` is `hidock-h1e`, the reported version is the one expected, `ready.activeRecording` is `false`, and the card has status **2304 / 0x900** and at least **6 MiB free**. A `null` readiness result during connection startup is not permission to upload: allow the initial handshake to finish and repeat only the read-only preflight query. Do not prepare or execute while readiness is missing.
+
+If the dock already reports **6.3.4 / 393988**, installation is unnecessary; this branch rejects reinstalling the same image. It also rejects downgrades. The firmware family was developed on official H1E 6.3.0 and the preceding custom 6.3.2, not on other HiDock models.
+
+Prepare one attempt:
+
+```javascript
+const attempt = await j.prepareFirmwareInstall('hardened');
+attempt;
+```
+
+Preparation reads the device and image and persists a prepared plan. It does not send the firmware. Review `attempt.state === 'prepared'` and its plan:
+
+- `targetVersion`: **393988**.
+- `imageBytes`: **3429376**.
+- `imageSha256`: **4942c98f9a150f09b9a31b606e7e9d985e99b16873c5ef64e6e17667808d82e8**.
+- `sourceVersion`: your current dock version.
+- `id`: the attempt to retain; plans expire after five minutes.
+
+Only after reviewing that exact plan, execute it **once**:
+
+```javascript
+const transfer = await j.executeFirmwareInstall(
+    attempt.plan.id,
+    '4942c98f9a150f09b9a31b606e7e9d985e99b16873c5ef64e6e17667808d82e8'
+);
+transfer;
+```
+
+The updater uses Next's existing serialized USB owner. It records the request durably before transmission and does not automatically retry. **The dock reboots automatically. Do not manually reset it, unplug power or start another upload.**
+
+Observe the same attempt after the automatic reboot:
+
+```javascript
+const installed = await j.observeFirmwareInstall(attempt.plan.id);
+installed;
+```
+
+A `confirmed` state requires the same device identity, exact target version, expected custom capabilities, idle recording state and ready card readback. The observation can wait up to three minutes. It does not attest a hash of every installed flash byte.
+
+## Interrupted or uncertain attempts
+
+Preserve the dedicated profile. Reopen this same revision with the same flags and profile, then inspect:
+
+```javascript
+const attempts = await j.getFirmwareInstallAttempts();
+attempts;
+```
+
+For an existing `requesting`, `awaiting-boot` or `uncertain` attempt, use `observeFirmwareInstall(existingAttempt.plan.id)`. Observation reconnects and reads the dock; it does not upload firmware or send a reset. An unresolved or unreadable journal fences further writes. Do not delete that journal or create a second attempt to bypass uncertainty.
+
+This branch installs only the pinned 6.3.4 image. It supplies no generic 6.3.0 restore, stock-forward recovery image or boot-ROM/unbrick procedure. Storage Optimize erases the recording card; it is not firmware recovery.
+
+## Validation scope
+
+This source revision was built in its isolated checkout and connected to the physical H1E already running 393988. Its trusted API returned native card/idle readiness and rejected an equal-version installation without creating an attempt or sending firmware. Initial preflight was unavailable while connection initialization was still in progress; the subsequent read-only query passed after that handshake completed.
+
+The frozen 6.3.4 image had previously been uploaded through the same Next owner/update implementation and booted automatically. No additional flash was performed merely to validate this source publication. See [VALIDATION.md](VALIDATION.md) for the image, audio and marker evidence and its limits.

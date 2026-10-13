@@ -31,6 +31,6 @@ For USB native recording on the current custom firmware, an explicit UAC tone wa
 
 Firmware installation uses the trusted HiDock Next development application's firmware owner and durable attempt journal. This repository has no uploader or flashing script. The regular HiDock Next application currently has no custom-firmware picker, so do not infer a menu or button from these documents.
 
-Read [NEXT-INSTALLATION.md](docs/NEXT-INSTALLATION.md) before any installation attempt. It records the actual development-app API flow and the one pending compatible-app revision/launch detail. Read [VALIDATION.md](docs/VALIDATION.md) for the evidence scope and its limits.
+Read [NEXT-INSTALLATION.md](docs/NEXT-INSTALLATION.md) before any installation attempt. It pins the public compatible Next source revision and gives the build, launch, preparation, execution and automatic-boot observation steps. Read [VALIDATION.md](docs/VALIDATION.md) for the evidence scope and its limits.
 
 The current 6.3.4 boot was confirmed by same-device identity, version, capabilities, idle, and card readbacks after the dock rebooted automatically. This confirms an operational boot at the reported version; it is not a full installed-image hash attestation or qualification of emergency boot-ROM recovery.
