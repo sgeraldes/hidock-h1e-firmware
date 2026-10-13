@@ -57,9 +57,9 @@ $firmwareLibrary = Join-Path $firmwareProfile 'library'
 $firmwareConfigPath = Join-Path $firmwareProfile 'config.json'
 New-Item -ItemType Directory -Path $firmwareProfile -Force | Out-Null
 if (!(Test-Path -LiteralPath $firmwareConfigPath)) {
-    @{ storage = @{ dataPath = $firmwareLibrary }; device = @{ autoConnect = $false };
-       transcription = @{ autoTranscribe = $false } } |
-        ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $firmwareConfigPath -Encoding utf8
+    $firmwareConfigJson = @{ storage = @{ dataPath = $firmwareLibrary }; device = @{ autoConnect = $false };
+       transcription = @{ autoTranscribe = $false } } | ConvertTo-Json -Depth 4
+    [System.IO.File]::WriteAllText($firmwareConfigPath, $firmwareConfigJson, [System.Text.UTF8Encoding]::new($false))
 }
 $firmwareConfig = Get-Content -LiteralPath $firmwareConfigPath -Raw | ConvertFrom-Json
 if ($firmwareConfig.storage.dataPath -ne $firmwareLibrary) {
