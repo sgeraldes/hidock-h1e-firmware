@@ -1,0 +1,33 @@
+{
+  "author": "Sebastian Geraldes",
+  "officialVendorRelease": false,
+  "releases": [
+    {
+      "version": "6.3.4",
+      "status": "latest custom distribution; physically installed and boot confirmed",
+      "image": "firmware/H1E-6.3.4-custom.bin",
+      "sha256": "4942c98f9a150f09b9a31b606e7e9d985e99b16873c5ef64e6e17667808d82e8",
+      "versionNumber": 393988,
+      "internalImageIdentity": "6.3.4_restore001",
+      "bytes": 3429376
+    },
+    {
+      "version": "6.3.2",
+      "status": "historical custom distribution; physically installed and boot confirmed",
+      "image": "firmware/H1E-6.3.2-custom.bin",
+      "sha256": "6940d83d790992d39d41791609b264d8b76041384b367076d7fbab1744c018f7",
+      "versionNumber": 393986,
+      "internalImageIdentity": "6.3.2_audit001",
+      "bytes": 3423232
+    }
+  ],
+  "recordingChannels": {
+    "right": "system audio",
+    "left": "microphone"
+  },
+  "latest": "6.3.4",
+  "sourceCodeIncluded": false,
+  "vendorBase": "H1E 6.3.0",
+  "supportedModel": "hidock-h1e",
+  "project": "HiDock H1E custom firmware"
+}

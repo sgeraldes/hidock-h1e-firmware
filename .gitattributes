@@ -1,0 +1,4 @@
+*.bin -text -diff
+*.md text eol=lf
+*.json text eol=lf
+SHA256SUMS text eol=lf
