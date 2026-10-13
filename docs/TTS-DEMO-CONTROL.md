@@ -12,7 +12,11 @@ The command does **not** accept text, a filename, a voice selection, or an audio
 
 The USB handler queues an asynchronous `sugr_app` message, subtype `0x15`: event `0x8C` for activation or `0x8D` for cancellation. Its one-byte reply acknowledges command handling, not completion of playback.
 
-Activation uses a transient RAM flag to avoid repeating an already-active request. It dispatches a registered main-task callback with value `0x51` and queues `sugr_app` event `0x4E`. The latter reaches mode-manager option 4, **music release**. The callback is indirect; its complete playback/resource selection is not yet qualified.
+Activation uses a transient RAM flag to avoid repeating an already-active request. It dispatches the registered key-0 callback at `0x01003A74` with event type 2 and payload value `0x51`, and queues `sugr_app` event `0x4E`. The latter reaches mode-manager option 4, **music release**.
+
+The recovered callback forwards request id `0x51` to the dispatcher. A 27-entry event table maps that id to TTS index `0x11`; the resource-name lookup selects **`noise.act`**, already packaged in the firmware. The player validates and queues that resource when its state checks pass. This is playback of a predefined asset, not conversion of supplied text into speech.
+
+This dispatch requires audio-manager option 1 to report internal mode **4**. That is a different internal enum from the LIVE capture mode 2. Request id `0x51` explicitly bypasses the check of recorder option `0x15`; it must not be described as blocked by that option. The recovered path does not establish how the SDK's `autoPlay` and `notification` booleans correspond to all native flags, or exclude further playback-state checks.
 
 Cancellation clears the transient flag and, when the handler considers a demo active, queues event `0x29` to task `main`. That path cancels the current player/stream context, drains queued items, and resets its timer. It also queues `sugr_app` event `0x4F`, which reaches mode-manager option 5, **tone request**, with a default 3000 ms reservation. That reservation is not a measured three-second speaker-stop latency.
 
@@ -31,4 +35,6 @@ Cancellation was requested two seconds after activation. The check then allowed 
 
 The relevant command branch, event routing, cancellation code and mode-selector branches are byte-identical between the official decoded 6.3.0 base and the frozen custom 6.3.4 image. A later, broader `sugr_app` window differs at `0x01033322–0x01033325`; that difference has not been attributed here.
 
-**Still unqualified:** audible waveform, speech, exact acoustic stop latency, interference with concurrent notification playback, and the full dynamically registered startup callback. The ACKs and state readbacks do not prove those effects. Next has no public SDK/UI control for this command; the test used an isolated qualification helper.
+The recovered startup callback, mode check, event mapping, resource lookup and enqueue bytes also match the frozen custom image. An initial decompiler reading confused the event-type-0 branch (`r0=1`) with event type 2. The actual type-2 instructions load `r0` from the payload halfword, so the demo uses id `0x51` and receives its explicit option-`0x15` exemption.
+
+**Still unqualified:** audible waveform, speech, exact acoustic stop latency, interference with concurrent notification playback, and the complete host/native settings crosswalk. Asset selection and enqueue are established from code; the ACKs and state readbacks do not prove audible rendering. Next has no public SDK/UI control for this command; the test used an isolated qualification helper.
