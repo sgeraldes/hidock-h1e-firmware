@@ -4,7 +4,7 @@
 
 ## Compatible Next revision
 
-Use the public [HiDock Next firmware branch](https://github.com/sgeraldes/hidock-next-2/tree/firmware/h1e-6.3.4), at reviewed commit **[cdc36e3505d4fee4fb9af341d8af8cb23f5adf9e](https://github.com/sgeraldes/hidock-next-2/commit/cdc36e3505d4fee4fb9af341d8af8cb23f5adf9e)**. Ordinary Next releases do not have a custom-firmware picker. This branch provides the installation API through Next's own USB connection; it is not a Windows installer or a separate USB flasher.
+Use the public [HiDock Next firmware branch](https://github.com/sgeraldes/hidock-next-2/tree/firmware/h1e-6.3.4), at reviewed audio-control source commit **[be421bbd82d1e4544af60b25b8b4b2cb8e9ce589](https://github.com/sgeraldes/hidock-next-2/commit/be421bbd82d1e4544af60b25b8b4b2cb8e9ce589)**. Ordinary Next releases do not have a custom-firmware picker. This branch provides the installation API through Next's own USB connection; it is not a Windows installer or a separate USB flasher.
 
 The exact same pinned image is included at `apps/electron/resources/firmware/h1e-rea-hardened.bin`. This firmware repository contains the downloadable images and documents; app source remains in the Next repository.
 
@@ -15,7 +15,7 @@ Node.js 22.12 or later and Git are required. In PowerShell, create a separate ch
 ```powershell
 git clone --single-branch --branch firmware/h1e-6.3.4 https://github.com/sgeraldes/hidock-next-2.git HiDockNext-H1E-Firmware
 Set-Location HiDockNext-H1E-Firmware
-git checkout cdc36e3505d4fee4fb9af341d8af8cb23f5adf9e
+git checkout be421bbd82d1e4544af60b25b8b4b2cb8e9ce589
 
 $packages = @('ai-providers', 'calendar-sync', 'connectors', 'connectors-slack', 'database', 'jensen-protocol', 'knowledge-graph', 'transcription')
 foreach ($package in $packages) {
@@ -151,6 +151,8 @@ This branch installs only the pinned 6.3.4 image. It supplies no generic 6.3.0 r
 
 ## Validation scope
 
-This source revision was built in its isolated checkout and connected to the physical H1E already running 393988. Its trusted API returned native card/idle readiness and rejected an equal-version installation without creating an attempt or sending firmware. Initial preflight was unavailable while connection initialization was still in progress; the subsequent read-only query passed after that handshake completed.
+The firmware-install implementation was qualified at source commit `cdc36e3`: its trusted API returned card/idle readiness and rejected an equal-version installation without creating an attempt or sending firmware. The pinned `be421bb` source retains that implementation and adds native controls and live monitoring. On 13 October 2026, its corrected Monitor/Stop path displayed Microphone and System audio on the physical H1E 393988, then returned to idle with all 587 files and native settings preserved. [Bounded runtime receipt](https://github.com/sgeraldes/hidock-next-2/blob/be421bbd82d1e4544af60b25b8b4b2cb8e9ce589/docs/devices/evidence/h1e-native-live-393988.json).
 
 The frozen 6.3.4 image had previously been uploaded through the same Next owner/update implementation and booted automatically. No additional flash was performed merely to validate this source publication. See [VALIDATION.md](VALIDATION.md) for the image, audio and marker evidence and its limits.
+
+After installation, use a **normal** Next development launch for native recording controls and live monitoring. Recovery/firmware-qualification mode intentionally blocks live audio. See the [native recording and live channel guide](https://github.com/sgeraldes/hidock-next-2/blob/be421bbd82d1e4544af60b25b8b4b2cb8e9ce589/docs/devices/h1e-native-live-audio.md).

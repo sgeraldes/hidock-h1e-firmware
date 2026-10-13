@@ -6,6 +6,8 @@ Keep microphone and computer playback separate in the dock's own recordings. Cho
 
 [Detailed release notes](RELEASE-NOTES.md) · [Download releases](https://github.com/sgeraldes/hidock-h1e-firmware/releases) · [Install with HiDock Next](docs/NEXT-INSTALLATION.md)
 
+[Use native recording controls and the live Mic/System monitor in Next](https://github.com/sgeraldes/hidock-next-2/blob/be421bbd82d1e4544af60b25b8b4b2cb8e9ce589/docs/devices/h1e-native-live-audio.md). The compatible source branch now exposes the firmware's recording settings and provider-free live channel meters. This is an application update; the published firmware images remain the same.
+
 This repository contains Sebastian Geraldes's prebuilt custom firmware images and documentation for the HiDock H1E. The firmware is based on official H1E 6.3.0. These custom version numbers are independent of HiDock's official releases. Firmware source code and app source code are kept out of this distribution repository.
 
 ## Images
